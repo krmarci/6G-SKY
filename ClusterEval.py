@@ -24,11 +24,12 @@ def cartesianToSpherical(p):
     """
     Converts an x-y-z tuple to a lat-lon-alt tuple.
     """
-    # r = (p[0]**2 + p[1]**2 + p[2]**2)**(0.5)
-    r = np.linalg.norm(p)
-    alt = (r - 6371) * 3280.8399
-    lat = 90 - math.degrees(math.acos(p[2] / r))
-    lon = math.degrees(signum(p[1]) * math.acos(p[0] / (p[0]**2 + p[1]**2)**(0.5)))
+    alt = np.linalg.norm(p)
+    lat = math.asin(p[2] / alt)
+    lon = signum(p[1]) * math.acos(p[0] / (alt * math.cos(lat)))
+    alt = (alt - 6371) * 3280.8399
+    lat = math.degrees(lat)
+    lon = math.degrees(lon)
     return (lat, lon, alt)
 
 def signum(x):
@@ -48,28 +49,31 @@ print(datetime.datetime.now()-t, "Starting import...", sep=': ')
 data = pd.read_csv('clean_data.csv.gz', index_col=0, compression='gzip')
 clusters = pd.read_csv('clusters.csv', index_col=0)
 
-print(datetime.datetime.now()-t, "Import completed.", sep=': ')
+print(datetime.datetime.now()-t, "Import completed. Starting evaluation...", sep=': ')
 
 planes = data.sample(n=nTest)
 
 df = pd.DataFrame([{cidx: cartdist(clusters[['x', 'y', 'z']].loc[cidx], planes[['x', 'y', 'z']].loc[pidx]) for cidx in clusters.index} for pidx in planes.index], columns=clusters.index)
 result = df.apply(lambda row: (row < clusters['radius'].transpose()).any(), axis=1)
 result.index = planes.index
-print(result.value_counts())
+print(datetime.datetime.now()-t, f"Evaluation complete. Coverage: {result.value_counts().loc[True]}/{nTest}", sep=': ')
+print(datetime.datetime.now()-t, "Starting map export...", sep=': ')
 
 m = folium.Map()
 for cidx, c in clusters.iterrows():
     r = c['radius']*1000
     lat, lon, alt = cartesianToSpherical(c[['x', 'y', 'z']].tolist())
     folium.Circle(radius=r, location=[lat, lon], popup=f"{cidx}\n{lat:.4f}, {lon:.4f}").add_to(m)
-"""
+
+m.save("clusters.html")
+    
 for pidx, p in planes.iterrows():
     lat, lon, alt = cartesianToSpherical(p[['x', 'y', 'z']].tolist())
     if result.loc[pidx] == True:
         folium.Marker(location=[lat, lon], popup=f"{cidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="green", icon="glyphicon-star")).add_to(m)
     else:
         folium.Marker(location=[lat, lon], popup=f"{pidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="red", icon="glyphicon-star")).add_to(m)
-"""
-m.save("clusters.html")
 
-print(datetime.datetime.now()-t, "Data export completed.", sep=': ')
+m.save("eval.html")
+
+print(datetime.datetime.now()-t, "Map export completed.", sep=': ')
