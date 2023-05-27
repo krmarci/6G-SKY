@@ -70,9 +70,9 @@ m.save("clusters.html")
 for pidx, p in planes.iterrows():
     lat, lon, alt = cartesianToSpherical(p[['x', 'y', 'z']].tolist())
     if result.loc[pidx] == True:
-        folium.Marker(location=[lat, lon], popup=f"{cidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="green", icon="glyphicon-star")).add_to(m)
+        folium.Marker(location=[lat, lon], popup=f"{cidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="green", icon="glyphicon-plane")).add_to(m)
     else:
-        folium.Marker(location=[lat, lon], popup=f"{pidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="red", icon="glyphicon-star")).add_to(m)
+        folium.Marker(location=[lat, lon], popup=f"{pidx}\n{lat:.4f}, {lon:.4f}", icon=folium.Icon(color="red", icon="glyphicon-plane")).add_to(m)
 
 m.save("eval.html")
 
