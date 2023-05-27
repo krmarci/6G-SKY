@@ -35,7 +35,6 @@ def cartesianToSpherical(p):
     """
     Converts an x-y-z tuple to a lat-lon-alt tuple.
     """
-    # r = (p[0]**2 + p[1]**2 + p2]**2)**(0.5)
     alt = np.linalg.norm(p)
     lat = math.asin(p[2] / alt)
     lon = signum(p[1]) * math.acos(p[0] / (alt * math.cos(lat)))
@@ -53,9 +52,15 @@ def signum(x):
         return 0
 
 def cartdist(p1, p2):
+    """
+    Calculates the Cartesian distance of two points.
+    """
     return np.linalg.norm(p2 - p1)
 
 def midpoint(*points):
+    """
+    Calculates the midpoint of any number of Cartesian points.
+    """
     return np.sum(points, axis=0) / np.shape(points)[0]
 
 def radius(df):
@@ -177,6 +182,7 @@ for r,n in sorted(towers.items(), reverse=True):
     clusters_buff = clusters_buff.sort_values('score', ascending=False)
     # Are clusters with sea midpoints allowed?
     if not seaAllowed:
+        print(datetime.datetime.now()-t, "Removing clusters on sea...", sep=': ')
         idx = 0
         while idx < n and idx < clusters_buff.shape[0]:
             cl_idx = clusters_buff.index[idx]
@@ -205,16 +211,15 @@ for r,n in sorted(towers.items(), reverse=True):
                             clusters_buff = clusters_buff.drop(cl_idx)
                             idx -= 1
                     else:
-                        print(f'Removing cluster with midpoint {clusters_buff.loc[cl_idx, "lat"]:.6f}, {clusters_buff.loc[cl_idx, "lon"]:.6f}')
                         data.loc[data['cluster'] == cl_idx, 'cluster'] = -1
                         clusters_buff = clusters_buff.drop(cl_idx)
                         idx -= 1
                 else:
-                    print(f'Removing cluster with midpoint {clusters_buff.loc[cl_idx, "lat"]:.6f}, {clusters_buff.loc[cl_idx, "lon"]:.6f}')
                     data.loc[data['cluster'] == cl_idx, 'cluster'] = -1
                     clusters_buff = clusters_buff.drop(cl_idx)
                     idx -= 1
-            idx += 1               
+            idx += 1
+        print(datetime.datetime.now()-t, "Cluster removal completed.", sep=': ')
 
     clusters_buff = clusters_buff.head(n)
     clusters_buff['radius'] = r
@@ -234,6 +239,7 @@ clusters.to_csv('clusters.csv')
 
 print(datetime.datetime.now()-t, "Data export completed.", sep=': ')
 
+print(datetime.datetime.now()-t, "Exporting a random cluster to map...", sep=': ')
 m = folium.Map()
 cluster = clusters.sample(n=1)
 r = cluster['radius'].iloc[0]*1000
@@ -252,3 +258,4 @@ for cidx, c in clusters.drop(cluster.index[0]).iterrows():
         folium.Circle(radius=r, location=[lat, lon], popup=f"{cidx}\n{lat:.4f}, {lon:.4f}", color="red").add_to(m)
 
 m.save("cluster.html")
+print(datetime.datetime.now()-t, "Map export completed.", sep=': ')
