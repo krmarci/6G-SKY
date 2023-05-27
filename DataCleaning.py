@@ -18,11 +18,7 @@ print(datetime.datetime.now()-t, "Plane capacities imported.", sep=': ')
 print(datetime.datetime.now()-t, "Importing files...", sep=': ')
 
 loc = "E:\BME\Önlab1"
-try:
-    files = os.listdir(loc)
-except FileNotFoundError:
-    loc = 'D:\Marci\BME\Önálló labor 1\data'
-    files = os.listdir(loc)
+files = os.listdir(loc)
 files = [file for file in files if file[-7:] == ".csv.gz"]
 
 
@@ -62,7 +58,6 @@ for file in files:
     df['scheduled_departure_time_utc'] = df['scheduled_departure_time_utc'].replace(to_replace='\.\d*', value='', regex=True)
     df['scheduled_departure_time_utc'] = pd.to_datetime(df['scheduled_departure_time_utc'])
     # changing spherical coordinates to Cartesian
-    # df.apply(sphericalToCartesian) from earlier versions runs half as fast
     lat = np.radians(df['latitude'])
     lon = np.radians(df['longitude'])
     alt = df['altitude_baro'].to_numpy()
